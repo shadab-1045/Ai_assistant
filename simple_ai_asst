@@ -1,3 +1,5 @@
+"""Run an interactive assistant that can stream replies and call local tools."""
+
 import json
 from types import SimpleNamespace
 from dotenv import load_dotenv
@@ -17,6 +19,7 @@ messages.append({"role": "system", "content": "You are a helpful assistant."})
 
 
 def stream_chat(history):
+    """Stream a reply and assemble any tool calls returned in partial chunks."""
     stream = client.chat.completions.create(
         model=os.getenv("MODEL"),
         messages=history,
@@ -32,7 +35,7 @@ def stream_chat(history):
                 continue
             delta = chunk.choices[0].delta
             
-            #content streaming
+            # Print text as it arrives instead of waiting for the full response.
             if(delta.content):
                 if(not label_printed):
                     print("Assistant: ", end="", flush=True)
@@ -41,7 +44,7 @@ def stream_chat(history):
                 full_response += delta.content
                 
 
-            #tool call streaming
+            # Tool-call fields can arrive in separate chunks, so accumulate them by index.
             for tc in delta.tool_calls or []:
                 obj = calls.setdefault(
                     tc.index,
@@ -69,6 +72,7 @@ def stream_chat(history):
     
 
 def build_tool_calls_payload(tool_calls):
+    """Convert assembled tool calls into the format expected in chat history."""
     payload=[]
     for tool_call in tool_calls:
         tool_call_dict={
@@ -89,10 +93,9 @@ while True:
     messages.append({"role": "user", "content": user_input})
 
     MAX_STEPS = 4
-    #chained tool calling
+    # Allow the assistant to use a tool result in a follow-up model response.
     for step in range(MAX_STEPS):
         full_response,tool_calls=stream_chat(messages )
-        # msg = response.choices[0].message
         if(not tool_calls):
             break
         

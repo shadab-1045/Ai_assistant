@@ -1,38 +1,6 @@
-#structure for tool calling: 
+"""Define the assistant's callable tools and their local implementations."""
 
-# "type": "function",
-# "function": {
-#     "name": "function_name",
-#     "description": "Function description like what it does and how to use it",
-#     "parameters": {....}
-# }
-
-
-# format for parameters:
-# parameters": {
-#     "type": "object",
-#     "properties": {
-#         "param1": {
-#             "type": "string",
-#             "enum": ["value1", "value2", "value3"], // optional, if you want to restrict the values
-#             "description": "Description of param1"
-#         },
-#         "param2": {
-#             "type": "integer",
-#             "description": "Description of param2"
-#         },
-#         "param3": {
-#             "type": "array",
-#             "items": {
-#                 "type": "string"
-#             },
-#             "description": "Description of param3"
-#         }
-#     },
-#     "required": ["param1"] // list of required parameters
-# }
 import json
-
 import requests
 from datetime import datetime
 from urllib.parse import quote
@@ -41,21 +9,25 @@ from Utilities.utilities import log
 
 
 def get_current_time():
+    """Return the local date and time in a model-friendly format."""
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 def get_weather(city:str):
+    """Fetch current weather for a city using wttr.in."""
     url = f"https://wttr.in/{quote(city, safe='')}?format=4"
     response = requests.get(url, timeout=10)
     response.raise_for_status()  # Raise an exception for HTTP errors
     return response.text
 
 def my_city():
+    """Return the configured home city."""
     return "pune"
 
 
 
 def run_tool(tool_call):
+    """Dispatch a model-requested tool call and return its result as text."""
     func_name=tool_call.function.name
     func_params={}
             
@@ -71,7 +43,7 @@ def run_tool(tool_call):
     return str(result)
 
 
-#TOOLS
+# Schemas exposed to the model; keep their function names in sync with the map below.
 TOOLS=[
     {
         "type": "function",
